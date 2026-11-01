@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Will this employee leave?</h1>
+<p class="muted">Fill in the employee details. Predictions come from the <strong>{{ meta.selected_model }}</strong> model.</p>
+<div class="grid">
+<form id="form" class="card">
+  <div class="fields">
+  {% for col, opts in meta.categorical_features.items() %}
+    <label>{{ labels[col] }}
+      <select name="{{ col }}" required>{% for o in opts %}<option>{{ o }}</option>{% endfor %}</select>
+    </label>
+  {% endfor %}
+  {% for col in meta.numeric_features %}
+    {% set r = meta.numeric_ranges[col] %}
+    <label>{{ labels[col] }} <small>({{ r[0] }}–{{ r[1] }})</small>
+      <input type="number" name="{{ col }}" min="{{ r[0] }}" max="{{ r[1] }}"
+             value="{{ ((r[0] + r[1]) / 2) | round | int }}" required>
+    </label>
+  {% endfor %}
+  </div>
+  <button type="submit">Predict attrition</button>
+</form>
+<aside class="card" id="result" aria-live="polite">
+  <h2>Result</h2><p class="muted">Submit the form to see the prediction.</p>
+</aside>
+</div>
+<script>
+const form = document.getElementById('form'), box = document.getElementById('result');
+form.addEventListener('submit', async e => {
+  e.preventDefault();
+  const body = Object.fromEntries(new FormData(form));
+  const res = await fetch('/predict', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)});
+  const d = await res.json();
+  if (!res.ok) { box.innerHTML = '<h2>Result</h2><p class="err"></p>'; box.querySelector('.err').textContent = d.error; return; }
+  const pct = (d.probability * 100).toFixed(1);
+  box.innerHTML = `<h2>Result</h2>
+    <div class="badge ${d.risk.toLowerCase()}">${d.risk} risk</div>
+    <p class="big">${pct}%</p><p>${d.prediction}</p>
+    <div class="bar"><div style="width:${pct}%"></div></div>
+    <p class="muted">Model: ${d.model}</p>`;
+});
+</script>
+{% endblock %}

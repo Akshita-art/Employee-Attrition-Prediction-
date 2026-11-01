@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Model comparison{% endblock %}
+{% block content %}
+<h1>Model comparison</h1>
+<p class="muted">{{ meta.n_rows }} employees, {{ (meta.positive_rate * 100) | round(1) }}% attrition. 80/20 stratified split;
+hyperparameters tuned with 5-fold CV. Selected model (best CV ROC-AUC): <strong>{{ meta.selected_model }}</strong>.</p>
+<div class="card scroll"><table>
+<thead><tr><th>Model</th><th>CV ROC-AUC</th><th>Accuracy</th><th>Precision</th><th>Recall</th><th>F1</th><th>Test ROC-AUC</th><th>Best params</th></tr></thead>
+<tbody>
+{% for r in meta.results %}
+<tr {% if r.model == meta.selected_model %}class="sel"{% endif %}>
+<td>{{ r.model }}</td><td>{{ r.cv_roc_auc }}</td><td>{{ r.accuracy }}</td><td>{{ r.precision }}</td>
+<td>{{ r.recall }}</td><td>{{ r.f1 }}</td><td>{{ r.roc_auc }}</td>
+<td><code>{{ r.best_params }}</code></td></tr>
+{% endfor %}
+</tbody></table></div>
+<p class="muted">ROC-AUC of 0.5 = random guessing. Accuracy alone is misleading here: always predicting “stays” already scores ~81%.</p>
+{% endblock %}
